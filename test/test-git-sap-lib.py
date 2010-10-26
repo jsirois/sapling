@@ -1,4 +1,6 @@
 from git.repo.base import Repo
+from unittest import TestCase
 
-def test_open_repo():
-  assert len(Repo().branches) > 0
+class TestSequenceFunctions(TestCase):
+    def test_open_repo(self):
+        self.assertTrue(len(Repo().branches) > 0)
