@@ -1,4 +1,5 @@
 .idea
 dist/
 MANIFEST
-
+*.pyc
+*.pyo
