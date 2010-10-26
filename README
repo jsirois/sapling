@@ -1,0 +1,5 @@
+Requirements:
+
+GitPython 0.3+: http://packages.python.org/GitPython/
+sudo easy_install GitPython
+
