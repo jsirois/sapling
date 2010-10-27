@@ -22,14 +22,14 @@ class Config(object):
 
   __slots__ = ('_splits')
 
-  def __init__(self, data = None):
+  def __init__(self, repo, data = None):
     if data is None or len(data) == 0 or data.isspace():
       self._splits = {}
     else:
-      self._splits = Config._parse(data.strip())
+      self._splits = Config._parse(repo, data.strip())
 
   @classmethod
-  def _parse(cls, config):
+  def _parse(cls, repo, config):
     local_config = {}
     try:
       exec(config, {}, local_config)
@@ -40,14 +40,18 @@ class Config(object):
 
     splits = {}
     for splitmap in local_config['splits']:
-      split = Config._parse_split(splitmap)
+      split = Config._parse_split(repo, splitmap)
       splits[split.name] = split
     return splits
 
   @classmethod
-  def _parse_split(cls, splitmap):
+  def _parse_split(cls, repo, splitmap):
     name = splitmap.pop('name')
-    return gitsap.Split(name, splitmap)
+    try:
+      return gitsap.Split(repo, name, splitmap)
+    except KeyError:
+      raise ConfigError("Problem creating split: %s\n%s\n\n%s", name, splitmap,
+                        traceback.format_exc())
 
   @classmethod
   def _validate(cls, config):
