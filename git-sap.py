@@ -30,13 +30,23 @@ def open_config(repo):
     return gitsap.Config()
 
 repo = open_repo()
-print "Using repo at: ", repo.working_tree_dir
+print "Using repo: %s [%s]" % (repo.working_tree_dir, repo.active_branch)
 
 splitConfig = open_config(repo)
-print "Using split config: ", splitConfig
 
-tree = repo.branches.master.commit.tree
-for entry in tree.traverse():
-  print entry.hexsha, entry.type, entry.name, entry.mode, entry.path, entry.abspath
+tree = repo.head.commit.tree
+def find_split(split):
+  for path in split.paths:
+    subtree = tree/path
+    print "Found subtree at path %s for split %s" % (path, split.name)
+    for entry in subtree.traverse():
+      print entry.hexsha, entry.type, entry.name, entry.mode, entry.path, entry.abspath
+    yield subtree
+
+print "Using split config: ", splitConfig
+subtrees = []
+for split in splitConfig.splits.values():
+  for subtree in find_split(split):
+    subtrees.append(subtree)
 
 exit(0)
