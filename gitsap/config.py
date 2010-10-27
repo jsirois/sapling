@@ -14,7 +14,7 @@ class ConfigError(Exception):
 class Config(object):
   """Represents a git-sap split configuration."""
 
-  __slots__ = ['_splits']
+  __slots__ = ('_splits')
 
   def __init__(self, data = None):
     if data is None or len(data) == 0 or data.isspace():

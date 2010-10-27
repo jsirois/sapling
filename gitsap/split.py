@@ -3,7 +3,7 @@ class Split(object):
   subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
   remote."""
 
-  __slots__ = [ '_name', 'remote', 'paths']
+  __slots__ = ('_name', 'remote', 'paths')
 
   def __init__(self, name, map = None):
     self._name = name
