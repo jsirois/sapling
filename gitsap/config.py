@@ -1,4 +1,5 @@
-import gitsap
+from split import Split
+
 import traceback
 
 class ConfigError(Exception):
@@ -48,7 +49,7 @@ class Config(object):
   def _parse_split(cls, repo, splitmap):
     name = splitmap.pop('name')
     try:
-      return gitsap.Split(repo, name, splitmap)
+      return Split(repo, name, **splitmap)
     except KeyError:
       raise ConfigError("Problem creating split: %s\n%s\n\n%s", name, splitmap,
                         traceback.format_exc())

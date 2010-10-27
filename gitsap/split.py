@@ -5,15 +5,13 @@ class Split(object):
 
   __slots__ = ('_repo', '_name', 'remote', '_paths')
 
-  def __init__(self, repo, name, map = None):
+  def __init__(self, repo, name, **kwargs):
+    """Creates a new Split over the given repo with the specified logical name.  The 'remote' git
+    url and the 'paths' to split out can be specified as keyword arguments"""
     self._repo = repo
     self._name = name
-    if map is not None:
-      self.remote = map.get('remote', None)
-      self.paths = map.get('paths', [])
-    else:
-      self.remote = None
-      self.paths = []
+    self.remote = kwargs.get('remote', None)
+    self.paths = kwargs.get('paths', [])
 
   @property
   def name(self):
