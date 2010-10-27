@@ -1,0 +1,7 @@
+tests = {
+  'name': 'tests',
+  'remote': 'file:/tmp/gitsap-tests.git',
+  'paths': [ 'test' ]
+}
+
+splits = [ tests ]
