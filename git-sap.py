@@ -3,6 +3,7 @@
 import git
 import gitsap
 import os
+import stat
 
 USAGE = """git sap ...
 """
@@ -33,6 +34,12 @@ repo = open_repo()
 print "Using repo: %s [%s]" % (repo.working_tree_dir, repo.active_branch)
 
 splitConfig = open_config(repo)
-print "Using split config: ", splitConfig
+for name, split in splitConfig.splits.items():
+  print "Found split: %s" % name
+  for subtree in split.subtrees():
+    # TODO(jsirois): remove this logging
+    print "\tFound subtree at path %s" % subtree.path
+    for entry in subtree.traverse():
+      print "\t\t", entry.hexsha, entry.type, stat.S_IMODE(entry.mode), entry.path
 
 exit(0)

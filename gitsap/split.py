@@ -29,19 +29,21 @@ class Split(object):
     self._paths = self._validate_paths(value)
 
   def _validate_paths(self, paths):
-    tree = self._repo.head.commit.tree
+    tree = self._current_tree()
     for path in paths:
       try:
-        subtree = tree/path
-
-        # TODO(jsirois): remove this logging
-        print "\tfound subtree at path %s" % path
-        for entry in subtree.traverse():
-          print "\t\t", entry.hexsha, entry.type, entry.name, entry.mode, entry.path, entry.abspath
-
+        tree / path
       except KeyError:
         raise KeyError("Invalid path: %s" % path)
     return paths
+
+  def subtrees(self):
+    tree = self._current_tree()
+    for path in self.paths:
+      yield tree / path
+
+  def _current_tree(self):
+    return self._repo.head.commit.tree
 
   def __str__(self):
     return "Split(name=%s, remote=%s, paths=%s)" % (self._name, self.remote, self.paths)
