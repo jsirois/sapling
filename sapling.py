@@ -37,7 +37,8 @@ def install(show = False, force = False):
     print os.path.realpath(installed_link_path)
     return
 
-  if force and os.path.exists(installed_link_path):
+  recreate = force and os.path.exists(installed_link_path)
+  if recreate:
     try:
       os.remove(installed_link_path)
     except OSError as e:
@@ -46,7 +47,7 @@ def install(show = False, force = False):
   if not os.path.exists(installed_link_path):
     try:
       os.symlink(os.path.abspath(sys.argv[0]), installed_link_path)
-      print("symlink %s at: %s" % ("re-installed" if force else "installed", installed_link_path))
+      print("symlink %s at: %s" % ("re-installed" if recreate else "installed", installed_link_path))
     except OSError as e:
       usage("failed to install symlink: %s", e)
 
