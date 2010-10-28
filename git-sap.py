@@ -58,10 +58,7 @@ def split(repo, split_config, names, verbose):
     branch.commit = parent
     print "%s\t[%s]" % (parent.hexsha, branch.name)
 
-def main():
-  repo = open_repo()
-  split_config = open_config(repo)
-
+def parse_args():
   usage = """
     %prog (-d) --list
     %prog (-d) --split [splitname...]"""
@@ -83,23 +80,32 @@ def main():
                     const = "split",
                     help =
                     """populates the [splitname] branch with commits intersecting the split""")
+
   (options, args) = parser.parse_args()
+  return (options, args, parser.error)
+
+def main():
+  # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
+  repo = open_repo()
+  split_config = open_config(repo)
+
+  (options, args, ferror) = parse_args()
 
   if options.debug:
     print "repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir)
 
   if options.subcommand is "list":
     if len(args) != 0:
-      parser.error("list takes no arguments")
+      ferror("list takes no arguments")
     list(repo, split_config, options.verbose)
 
   elif options.subcommand is "split":
     if len(args) == 0:
-      parser.error("At least 1 split must be specified")
+      ferror("At least 1 split must be specified")
     try:
       split(repo, split_config, args, options.verbose)
     except KeyError as e:
-      parser.error("split not defined: %s" % e)
+      ferror("split not defined: %s" % e)
 
 try:
   main()
