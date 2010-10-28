@@ -1,5 +1,5 @@
+from lib import with_line_numbers
 from split import Split
-
 import traceback
 
 class ConfigError(Exception):
@@ -34,8 +34,9 @@ class Config(object):
     local_config = {}
     try:
       exec(config, {}, local_config)
-    except SyntaxError:
-      raise ConfigError("Problem parsing config: %s\n\n%s", config, traceback.format_exc())
+    except StandardError:
+      raise ConfigError("Problem parsing config:\n%s\n\n%s", with_line_numbers(config),
+                        traceback.format_exc())
 
     Config._validate(local_config)
 
