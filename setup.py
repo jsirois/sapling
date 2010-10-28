@@ -6,7 +6,7 @@ setup(
 
     author = "John Sirois",
     author_email = "john.sirois@gmail.com",
-    description = "A git porcelain to manage bidirectional subtree syncing with foreign git " +
+    description = "A git porcelain to manage bidirectional subtree syncing with foreign git "
                   "repositories",
     license = "Apache License Version 2.0",
 

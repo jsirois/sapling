@@ -28,10 +28,14 @@ def open_config(repo):
   else:
     return saplib.Config(repo)
 
-def install(force = False):
+def install(show = False, force = False):
   git_exec_path = subprocess.Popen(["git", "--exec-path"],
                                    stdout = subprocess.PIPE).communicate()[0].strip()
   installed_link_path = os.path.join(git_exec_path, 'git-sap')
+
+  if show:
+    print os.path.realpath(installed_link_path)
+    return
 
   if force and os.path.exists(installed_link_path):
     try:
@@ -108,6 +112,12 @@ def parse_args():
                      action = "store_true",
                      default = False,
                      help = """forces a re-install of the git sap command""")
+  install.add_option("-s", "--show",
+                     dest = "show",
+                     action = "store_true",
+                     default = False,
+                     help = "does not perform an install, instead shows the path of the binary "
+                     "git sap' calls into")
   parser.add_option_group(install)
 
   list = optparse.OptionGroup(parser, "List configured splits for the current git repo")
@@ -137,7 +147,7 @@ def main():
   if options.subcommand is "install":
     if len(args) != 0:
       ferror("list takes no arguments")
-    install(options.force)
+    install(options.show, options.force)
     return
 
   # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
