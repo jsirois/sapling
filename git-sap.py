@@ -36,13 +36,8 @@ def list(repo, split_config, verbose):
       )
       print "%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths))
 
-def get_splits(split_config, names):
-  splits = split_config.splits
-  for name in set(names):
-    yield splits[name]
-
-def split(splits, verbose):
-  for split in splits:
+def split(split_config, names, verbose):
+  for split in (split_config.splits[name] for name in names):
     if (verbose):
       print "Operating on split: %s" % split
 
@@ -101,7 +96,7 @@ def main():
     if len(args) == 0:
       parser.error("At least 1 split must be specified")
     try:
-      split(get_splits(split_config, args), options.verbose)
+      split(split_config, args, options.verbose)
     except KeyError as e:
       parser.error("split not defined: %s" % e)
 
