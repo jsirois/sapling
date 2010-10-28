@@ -87,11 +87,15 @@ def parse_args():
     %prog (-d) --list
     %prog (-d) --split [splitname...]"""
 
-  parser = optparse.OptionParser(usage = usage, version = "%prog 0.1")
+  epilog = "Happy splitting!"
+
+  parser = optparse.OptionParser(usage = usage, version = "%prog 0.1", epilog = epilog)
   parser.add_option("-d", "--debug", dest = "debug", action = "store_true", default = False,
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
                     help = "prints extra information")
+
+  # TODO(jsirois): enforce mutual exclusivity of these option groups
 
   install = optparse.OptionGroup(parser, "Install sap as a git subcommand")
   install.add_option("--install",

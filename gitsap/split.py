@@ -44,9 +44,9 @@ class Split(object):
     for path in self.paths:
       yield commit.tree / path
 
-  def commits(self):
+  def commits(self, reverse = True):
     head = self._current_head()
-    return git.Commit.iter_items(self._repo, head, self.paths, reverse = False)
+    return git.Commit.iter_items(self._repo, head, self.paths, reverse = reverse)
 
   def _current_tree(self):
     return self._current_head().tree
