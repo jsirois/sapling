@@ -1,3 +1,5 @@
+import git
+
 class Split(object):
   """Represents a split of a git repository off to a remote repository.  A Split maps one or more
   subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
@@ -35,13 +37,22 @@ class Split(object):
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def subtrees(self):
-    tree = self._current_tree()
+  def subtrees(self, commit = None):
+    if commit is None:
+      commit = self._current_head()
+
     for path in self.paths:
-      yield tree / path
+      yield commit.tree / path
+
+  def commits(self):
+    head = self._current_head()
+    return git.Commit.iter_items(self._repo, head, self.paths, reverse = False)
 
   def _current_tree(self):
-    return self._repo.head.commit.tree
+    return self._current_head().tree
+
+  def _current_head(self):
+    return self._repo.head.commit
 
   def __str__(self):
     return "Split(name=%s, remote=%s, paths=%s)" % (self._name, self.remote, self.paths)
