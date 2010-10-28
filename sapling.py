@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import git
 import optparse
@@ -89,7 +89,7 @@ def parse_args():
 
   epilog = "Happy splitting!"
 
-  parser = optparse.OptionParser(usage = usage, version = "%prog 0.1", epilog = epilog)
+  parser = optparse.OptionParser(usage = usage, version = "%prog 0.0.1", epilog = epilog)
   parser.add_option("-d", "--debug", dest = "debug", action = "store_true", default = False,
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
