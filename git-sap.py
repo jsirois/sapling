@@ -31,12 +31,10 @@ def list(repo, split_config, verbose):
     if not verbose:
       print split.name
     else:
-      print "%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths),
-                                  "\n\t".join(
-                                      map(lambda path:
-                                          "%s/" % os.path.relpath(
-                                              os.path.join(repo.working_tree_dir, path)),
-                                          split.paths)))
+      paths = (
+        "%s/" % os.path.relpath(os.path.join(repo.working_tree_dir, path)) for path in split.paths
+      )
+      print "%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths))
 
 def get_splits(split_config, names):
   splits = split_config.splits

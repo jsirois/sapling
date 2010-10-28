@@ -79,4 +79,4 @@ class Config(object):
     return self._splits
 
   def __str__(self):
-    return "Config(%s)" % ", ".join(map(lambda (x, y): '%s => %s' % (x, y), self.splits.items()))
+    return "Config(%s)" % ", ".join('%s => %s' % (x, y) for (x, y) in self.splits.items())
