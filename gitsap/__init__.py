@@ -1,5 +1,5 @@
 from config import Config, ConfigError
-from lib import find
+from lib import find, with_line_numbers
 from split import Split
 
 __all__ = (
@@ -7,4 +7,5 @@ __all__ = (
     'ConfigError',
     'find',
     'Split'
+    'with_line_numbers'
 )

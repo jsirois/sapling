@@ -19,5 +19,7 @@ def find(iterable, predicate, default = None):
 
 def with_line_numbers(string):
   lines = string.splitlines()
+  if len(lines) == 0:
+    lines.append(string)
   width = len(str(len(lines)))
   return os.linesep.join([str(i + 1).rjust(width) + ' ' + line for (i, line) in enumerate(lines)])
