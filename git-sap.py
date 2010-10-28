@@ -28,10 +28,18 @@ def open_config(repo):
   else:
     return gitsap.Config(repo)
 
-def install():
+def install(force = False):
   git_exec_path = subprocess.Popen(["git", "--exec-path"],
                                    stdout = subprocess.PIPE).communicate()[0].strip()
   installed_link_path = os.path.join(git_exec_path, 'git-sap')
+
+  if force and os.path.exists(installed_link_path):
+    try:
+      os.remove(installed_link_path)
+      print("symlink removed at: %s" % installed_link_path)
+    except OSError as e:
+      usage("failed to remove old symlink: %s", e)
+
   if not os.path.exists(installed_link_path):
     try:
       os.symlink(os.path.abspath(sys.argv[0]), installed_link_path)
@@ -84,23 +92,37 @@ def parse_args():
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
                     help = "prints extra information")
-  parser.add_option("--install",
-                    dest = "subcommand",
-                    action = "store_const",
-                    const = "install",
-                    help = """installs the git sap command if not installed already""")
-  parser.add_option("--list",
+
+  install = optparse.OptionGroup(parser, "Install sap as a git subcommand")
+  install.add_option("--install",
+                     dest = "subcommand",
+                     action = "store_const",
+                     const = "install",
+                     help = """installs the git sap command if not installed already""")
+  install.add_option("-f", "--force",
+                     dest = "force",
+                     action = "store_true",
+                     default = False,
+                     help = """forcesa re-install of the git sap command""")
+  parser.add_option_group(install)
+
+  list = optparse.OptionGroup(parser, "List configured splits for the current git repo")
+  list.add_option("--list",
                     dest = "subcommand",
                     default = "list",
                     action = "store_const",
                     const = "list",
                     help = """lists the defined splits""")
-  parser.add_option("--split",
+  parser.add_option_group(list)
+
+  split = optparse.OptionGroup(parser, "Split new commits out that affect one or more splits")
+  split.add_option("--split",
                     dest = "subcommand",
                     action = "store_const",
                     const = "split",
                     help =
                     """populates the [splitname] branch with commits intersecting the split""")
+  parser.add_option_group(split)
 
   (options, args) = parser.parse_args()
   return (options, args, parser.error)
@@ -111,7 +133,7 @@ def main():
   if options.subcommand is "install":
     if len(args) != 0:
       ferror("list takes no arguments")
-    install()
+    install(options.force)
     return
 
   # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
@@ -121,7 +143,7 @@ def main():
   if options.debug:
     print "repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir)
 
-  elif options.subcommand is "list":
+  if options.subcommand is "list":
     if len(args) != 0:
       ferror("list takes no arguments")
     list(repo, split_config, options.verbose)
