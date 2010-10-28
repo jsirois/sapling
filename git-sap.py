@@ -26,6 +26,15 @@ def open_config(repo):
   else:
     return gitsap.Config(repo)
 
+# TODO(jsirois): extract this utility to an appropriate spot
+def find(iterable, predicate, default = None):
+  for item in iterable:
+    if (predicate(item)):
+      return item
+  if default is None:
+    raise KeyError
+  return default()
+
 def list(repo, split_config, verbose):
   for split in split_config.splits.values():
     if not verbose:
@@ -36,26 +45,27 @@ def list(repo, split_config, verbose):
       )
       print "%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths))
 
-def split(split_config, names, verbose):
+def split(repo, split_config, names, verbose):
   for split in (split_config.splits[name] for name in names):
     if (verbose):
       print "Operating on split: %s" % split
 
-#  parent = None
-#  branch_name = 'sapling_split_%s' % split.name
-#  branch = find(repo.branches,
-#                lambda branch: branch.name is branch_name,
-#                repo.create_head(branch_name))
-#
-#  index = git.IndexFile(repo, '/tmp/%s.index' % split.name)
-#  for subtree in split.subtrees():
-#    print "Adding subtree %s to index %s" % (subtree, index)
-#    index.add(subtree)
-#  synthetic_tree = index.write_tree()
-#
-#  parent = git.Commit.create_from_tree(repo, synthetic_tree, "git-sap split",
-#                                       parent_commits = parent, head = True)
-#  branch.commit = parent
+    parent = None
+    branch_name = 'sapling_split_%s' % split.name
+    branch = find(repo.branches,
+                  lambda branch: branch.name == branch_name,
+                  lambda: repo.create_head(branch_name))
+
+    index = git.IndexFile(repo)
+    for subtree in split.subtrees():
+      print "Adding subtree %s to index %s" % (subtree, index)
+      index.add(subtree)
+    synthetic_tree = index.write_tree()
+
+    parent = git.Commit.create_from_tree(repo, synthetic_tree, "git-sap split",
+                                         parent_commits = parent, head = True)
+    branch.commit = parent
+    print "%s\t[%s]" % (parent.hexsha, branch.name)
 
 def main():
   repo = open_repo()
@@ -96,7 +106,7 @@ def main():
     if len(args) == 0:
       parser.error("At least 1 split must be specified")
     try:
-      split(split_config, args, options.verbose)
+      split(repo, split_config, args, options.verbose)
     except KeyError as e:
       parser.error("split not defined: %s" % e)
 
@@ -108,15 +118,6 @@ except object as e:
 
 
 # TODO(jsirois): kill this cruft
-
-#def find(iterable, predicate, default = None):
-#  for item in iterable:
-#    if (predicate(item)):
-#      return item
-#  if default is None:
-#    raise KeyError
-#  return default
-
 #for name, split in splitConfig.splits.items():
 #  print "Found split: %s" % name
 #
