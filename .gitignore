@@ -1,4 +1,5 @@
 .idea/workspace.xml
+build/
 dist/
 MANIFEST
 *.pyc

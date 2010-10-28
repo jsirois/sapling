@@ -1,3 +1,2 @@
-include git-sap.py
-recursive-include git-sap-lib *.py
+include LICENSE
 

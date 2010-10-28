@@ -4,6 +4,8 @@ import git
 import gitsap
 import optparse
 import os
+import subprocess
+import sys
 
 def usage(message, *args):
   print message % args
@@ -25,6 +27,20 @@ def open_config(repo):
         usage("Problem loading .saplings config: %s" % e)
   else:
     return gitsap.Config(repo)
+
+def install():
+  git_exec_path = subprocess.Popen(["git", "--exec-path"],
+                                   stdout = subprocess.PIPE).communicate()[0].strip()
+  installed_link_path = os.path.join(git_exec_path, 'git-sap')
+  if not os.path.exists(installed_link_path):
+    try:
+      os.symlink(os.path.abspath(sys.argv[0]), installed_link_path)
+      print("symlink installed at: %s" % installed_link_path)
+    except OSError as e:
+      usage("failed to install symlink: %s", e)
+
+  else:
+    print("symlink exists: %s" % installed_link_path)
 
 def list(repo, split_config, verbose):
   for split in split_config.splits.values():
@@ -68,6 +84,11 @@ def parse_args():
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
                     help = "prints extra information")
+  parser.add_option("--install",
+                    dest = "subcommand",
+                    action = "store_const",
+                    const = "install",
+                    help = """installs the git sap command if not installed already""")
   parser.add_option("--list",
                     dest = "subcommand",
                     default = "list",
@@ -85,16 +106,22 @@ def parse_args():
   return (options, args, parser.error)
 
 def main():
+  (options, args, ferror) = parse_args()
+
+  if options.subcommand is "install":
+    if len(args) != 0:
+      ferror("list takes no arguments")
+    install()
+    return
+
   # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
   repo = open_repo()
   split_config = open_config(repo)
 
-  (options, args, ferror) = parse_args()
-
   if options.debug:
     print "repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir)
 
-  if options.subcommand is "list":
+  elif options.subcommand is "list":
     if len(args) != 0:
       ferror("list takes no arguments")
     list(repo, split_config, options.verbose)
