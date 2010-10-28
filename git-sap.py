@@ -26,15 +26,6 @@ def open_config(repo):
   else:
     return gitsap.Config(repo)
 
-# TODO(jsirois): extract this utility to an appropriate spot
-def find(iterable, predicate, default = None):
-  for item in iterable:
-    if (predicate(item)):
-      return item
-  if default is None:
-    raise KeyError
-  return default()
-
 def list(repo, split_config, verbose):
   for split in split_config.splits.values():
     if not verbose:
@@ -52,9 +43,9 @@ def split(repo, split_config, names, verbose):
 
     parent = None
     branch_name = 'sapling_split_%s' % split.name
-    branch = find(repo.branches,
-                  lambda branch: branch.name == branch_name,
-                  lambda: repo.create_head(branch_name))
+    branch = gitsap.find(repo.branches,
+                         lambda branch: branch.name == branch_name,
+                         lambda: repo.create_head(branch_name))
 
     index = git.IndexFile(repo)
     for subtree in split.subtrees():
