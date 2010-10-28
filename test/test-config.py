@@ -1,5 +1,5 @@
 import fixtures
-import gitsap
+import saplib
 import unittest
 
 class TestConfig(unittest.TestCase, fixtures.RepoFixture):
@@ -17,7 +17,7 @@ class TestConfig(unittest.TestCase, fixtures.RepoFixture):
     config = self._create_config("""
 test = {
   'name': 'test',
-  'remote': 'file:/tmp/git-sap-tests.git',
+  'remote': 'file:/tmp/saplib-tests.git',
   'paths': [
     'test',
   ]
@@ -27,11 +27,11 @@ splits = [ test ]""")
     self.assertTrue('test' in config.splits)
     split = config.splits['test']
     self.assertEquals('test', split.name)
-    self.assertEquals('file:/tmp/git-sap-tests.git', split.remote)
+    self.assertEquals('file:/tmp/saplib-tests.git', split.remote)
     self.assertEquals(['test'], split.paths)
 
   def _assert_config_error(self, config):
-    self.assertRaises(gitsap.ConfigError, gitsap.Config, self.repo(), config)
+    self.assertRaises(saplib.ConfigError, saplib.Config, self.repo(), config)
 
   def _create_config(self, config = None):
-    return gitsap.Config(self.repo(), config)
+    return saplib.Config(self.repo(), config)

@@ -13,7 +13,7 @@ class ConfigError(Exception):
 
 
 class Config(object):
-  """Represents a git-sap split configuration.  Configurations can contain any valid python code
+  """Represents a sapling split configuration.  Configurations can contain any valid python code
   but need only define a splits list containing the splits in a git repository.  Each split is a
   dict that must have the following entries:
   'name': a logical name for the split

@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 import git
-import gitsap
 import optparse
 import os
+import saplib
 import subprocess
 import sys
 
@@ -22,11 +22,11 @@ def open_config(repo):
   if os.path.exists(config_path):
     with open(config_path, 'r') as config:
       try:
-        return gitsap.Config(repo, config.read())
-      except gitsap.ConfigError as e:
+        return saplib.Config(repo, config.read())
+      except saplib.ConfigError as e:
         usage("Problem loading .saplings config: %s" % e)
   else:
-    return gitsap.Config(repo)
+    return saplib.Config(repo)
 
 def install(force = False):
   git_exec_path = subprocess.Popen(["git", "--exec-path"],
@@ -67,7 +67,7 @@ def split(repo, split_config, names, verbose):
 
     parent = None
     branch_name = 'sapling_split_%s' % split.name
-    branch = gitsap.find(repo.branches,
+    branch = saplib.find(repo.branches,
                          lambda branch: branch.name == branch_name,
                          lambda: repo.create_head(branch_name))
 
@@ -77,7 +77,7 @@ def split(repo, split_config, names, verbose):
       index.add(subtree)
     synthetic_tree = index.write_tree()
 
-    parent = git.Commit.create_from_tree(repo, synthetic_tree, "git-sap split",
+    parent = git.Commit.create_from_tree(repo, synthetic_tree, "saplib split",
                                          parent_commits = parent, head = True)
     branch.commit = parent
     print "%s\t[%s]" % (parent.hexsha, branch.name)
@@ -107,7 +107,7 @@ def parse_args():
                      dest = "force",
                      action = "store_true",
                      default = False,
-                     help = """forcesa re-install of the git sap command""")
+                     help = """forces a re-install of the git sap command""")
   parser.add_option_group(install)
 
   list = optparse.OptionGroup(parser, "List configured splits for the current git repo")

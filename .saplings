@@ -1,6 +1,6 @@
 tests = {
   'name': 'tests',
-  'remote': 'file:/tmp/gitsap-tests.git',
+  'remote': 'file:/tmp/sapling-tests.git',
   'paths': [ 'test' ]
 }
 
