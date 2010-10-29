@@ -48,6 +48,12 @@ splits = [
   hack
 ]
 
+== Use
+
+Given a the .saplings above, you could split out the common split to a new repo like so:
+$ git sap --split common
+$ git push git@github.com:jsirois/common.git sapling_split_common
+
 == Development:
 
 To run all tests, you can use something like:
