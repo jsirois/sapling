@@ -1,6 +1,10 @@
 == Installation:
 
-Install the python library and git porcelain script
+Install the python library and git porcelain script you can use easy_install to install from the
+PyPI registry: http://pypi.python.org/pypi/sapling
+$ sudo easy_install sapling
+
+Or you can get the source distribution and run the following from its root:
 $ sudo python setup.py install
 
 Then link the porcelain into git-core

@@ -9,6 +9,7 @@ setup(
     description = "A git porcelain to manage bidirectional subtree syncing with foreign git "
                   "repositories",
     license = "Apache License Version 2.0",
+    url = "http://github.com/jsirois/sapling",
 
     provides = "sapling",
     requires = [
