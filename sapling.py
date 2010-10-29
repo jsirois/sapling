@@ -75,16 +75,32 @@ def split(repo, split_config, names, verbose):
                          lambda branch: branch.name == branch_name,
                          lambda: repo.create_head(branch_name))
 
-    index = git.IndexFile(repo)
-    for subtree in split.subtrees():
-      print "Adding subtree %s to index %s" % (subtree, index)
-      index.add(subtree)
-    synthetic_tree = index.write_tree()
+    index_path = '/tmp/%s.index' % branch_name
+    index = git.IndexFile(repo, index_path)
 
-    parent = git.Commit.create_from_tree(repo, synthetic_tree, "saplib split",
-                                         parent_commits = parent, head = True)
-    branch.commit = parent
-    print "%s\t[%s]" % (parent.hexsha, branch.name)
+    try:
+      for commit in split.commits():
+        for path, subtree in split.subtrees(commit):
+          if verbose:
+            print "Adding subtree %s at path %s to index %s" % (subtree, path, index.path)
+          for item in subtree.traverse(lambda item, depth: item.type is "blob"):
+            if verbose:
+              print "\tAdding item: [%s] %s" % (item.hexsha, item.path)
+            index.add([item])
+        synthetic_tree = index.write_tree()
+        if verbose and parent is not None:
+          print "Creating commit with parent: %s" % parent.hexsha
+        parent = git.Commit.create_from_tree(repo,
+                                             synthetic_tree,
+                                             "sapling split of %s" % commit.hexsha,
+                                             parent_commits = [] if parent is None else [ parent ],
+                                             head = False)
+
+      branch.commit = parent
+      print "%s\t[%s]" % (parent.hexsha, branch.name)
+    finally:
+      if os.path.exists(index_path):
+        os.remove(index_path)
 
 def parse_args():
   usage = """

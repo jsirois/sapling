@@ -37,12 +37,16 @@ class Split(object):
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def subtrees(self, commit = None):
+  def subtrees(self, commit = None, ignore_not_found = True):
     if commit is None:
       commit = self._current_head()
 
     for path in self.paths:
-      yield commit.tree / path
+      try:
+        yield (path, commit.tree / path)
+      except KeyError as e:
+        if not ignore_not_found:
+          raise e
 
   def commits(self, reverse = True):
     head = self._current_head()
