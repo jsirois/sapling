@@ -100,7 +100,8 @@ def split(split_config, names, verbose):
 
       def on_commit(self, i, original_commit, new_commit):
         if verbose:
-          log("[%s] (%d of %d)", original_commit.hexsha, i + 1, self._commit_count)
+          log("%s -> %s (%d of %d)", original_commit.hexsha, new_commit.hexsha, i + 1,
+              self._commit_count)
         else:
           self._pct_complete = int(i / self._quantum % self._commit_count)
           if self._pct_complete > self._pct:
