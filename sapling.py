@@ -2,12 +2,14 @@
 from __future__ import print_function
 
 import git
+import gitdb
+import itertools
 import optparse
 import os
 import saplib
+import StringIO
 import subprocess
 import sys
-import itertools
 
 def usage(message, *args):
   print(message % args)
@@ -77,48 +79,55 @@ def split(repo, split_config, names, verbose):
                          lambda branch: branch.name == branch_name,
                          lambda: repo.create_head(branch_name))
 
-    index_path = '/tmp/%s.index' % branch_name
-    index = git.IndexFile(repo, index_path)
+    commits = __builtins__.list(split.commits())
+    commit_count = len(commits)
+    print("Processing %d commits" % commit_count)
 
-    try:
-      commits = __builtins__.list(split.commits())
-      commit_count = len(commits)
-      print("Processing %d commits" % commit_count)
+    pct = 0
+    pct_complete = 0
+    width = 80.0
 
-      pct = 0
-      width = 80.0
+    factor = commit_count / width
+    print("".join(itertools.repeat("_", int(width))))
 
-      factor = commit_count / width
-      print("".join(itertools.repeat("_", int(width))))
+    for i, commit in enumerate(commits):
+      pct_complete = int(i / factor % commit_count)
+      if verbose:
+        print("[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count))
+      elif pct_complete > pct:
+        print("".join(itertools.repeat(".", pct_complete - pct)), end = "")
+        pct = pct_complete
+        sys.__stdout__.flush()
 
-      for i, commit in enumerate(commits):
-        pct_complete = int(i / factor % commit_count)
+      index_path = '/tmp/%s.index' % branch_name
+      index = git.IndexFile(repo, index_path)
+      for item in split.subtrees(commit):
         if verbose:
-          print("[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count))
-        elif pct_complete > pct:
-          pct = pct_complete
-          print(".", end = "")
-          sys.__stdout__.flush()
+            print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
+        if item.type is "blob":
+          index.add(item,)
+        else:
+          index.add(item.traverse(lambda item, depth: item.type is "blob"))
+      synthetic_tree = index.write_tree()
+      parent = git.Commit(repo, git.Commit.NULL_BIN_SHA, synthetic_tree, commit.author,
+                          commit.authored_date, commit.author_tz_offset, commit.committer,
+                          commit.committed_date, commit.committer_tz_offset,
+                          "%s\n(sapling split of %s)" % (commit.message, commit.hexsha),
+                          [] if parent is None else [ parent ], commit.encoding)
 
-        for item in split.subtrees(commit):
-          if verbose:
-              print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
-          if item.type is "blob":
-            index.add(item,)
-          else:
-            index.add(item.traverse(lambda item, depth: item.type is "blob"))
-        synthetic_tree = index.write_tree()
-        parent = git.Commit.create_from_tree(repo,
-                                             synthetic_tree,
-                                             "sapling split of %s" % commit.hexsha,
-                                             parent_commits = [] if parent is None else [ parent ],
-                                             head = False)
+      stream = StringIO.StringIO()
+      parent._serialize(stream)
+      streamlen = stream.tell()
+      stream.seek(0)
 
-      branch.commit = parent
-      print("%s\t[%s]" % (parent.hexsha, branch.name))
-    finally:
-      if os.path.exists(index_path):
-        os.remove(index_path)
+      istream = repo.odb.store(gitdb.IStream(git.Commit.type, streamlen, stream))
+      parent.binsha = istream.binsha
+
+    branch.commit = parent
+
+    if not verbose:
+      print("".join(itertools.repeat(".", int(width) - pct_complete)))
+    print("%s\t[%s]" % (parent.hexsha, branch.name))
 
 def parse_args():
   usage = """
