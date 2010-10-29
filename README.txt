@@ -4,7 +4,7 @@ Install the python library and git porcelain script
 $ sudo python setup.py install
 
 Then link the porcelain into git-core
-$ sapling.py --install
+$ sudo sapling.py --install
 
 Get help
 $ git sap -h
