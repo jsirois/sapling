@@ -100,6 +100,9 @@ def split(repo, split_config, names, verbose):
         sys.__stdout__.flush()
 
       index_path = '/tmp/%s.index' % branch_name
+      if os.path.exists(index_path):
+        os.remove(index_path)
+
       index = git.IndexFile(repo, index_path)
       for item in split.subtrees(commit):
         if verbose:
