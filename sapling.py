@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import git
 import optparse
@@ -6,9 +7,10 @@ import os
 import saplib
 import subprocess
 import sys
+import itertools
 
 def usage(message, *args):
-  print message % args
+  print(message % args)
   exit(1)
 
 def open_repo():
@@ -34,7 +36,7 @@ def install(show = False, force = False):
   installed_link_path = os.path.join(git_exec_path, 'git-sap')
 
   if show:
-    print os.path.realpath(installed_link_path)
+    print(os.path.realpath(installed_link_path))
     return
 
   recreate = force and os.path.exists(installed_link_path)
@@ -57,17 +59,17 @@ def install(show = False, force = False):
 def list(repo, split_config, verbose):
   for split in split_config.splits.values():
     if not verbose:
-      print split.name
+      print(split.name)
     else:
       paths = (
         "%s/" % os.path.relpath(os.path.join(repo.working_tree_dir, path)) for path in split.paths
       )
-      print "%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths))
+      print("%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths)))
 
 def split(repo, split_config, names, verbose):
   for split in (split_config.splits[name] for name in names):
     if (verbose):
-      print "Operating on split: %s" % split
+      print("Operating on split: %s" % split)
 
     parent = None
     branch_name = 'sapling_split_%s' % split.name
@@ -81,13 +83,26 @@ def split(repo, split_config, names, verbose):
     try:
       commits = __builtins__.list(split.commits())
       commit_count = len(commits)
-      print "Processing %d commits" % commit_count
+      print("Processing %d commits" % commit_count)
+
+      pct = 0
+      width = 80.0
+
+      factor = commit_count / width
+      print("".join(itertools.repeat("_", int(width))))
 
       for i, commit in enumerate(commits):
-        print "[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count)
+        pct_complete = int(i / factor % commit_count)
+        if verbose:
+          print("[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count))
+        elif pct_complete > pct:
+          pct = pct_complete
+          print(".", end = "")
+          sys.__stdout__.flush()
+
         for item in split.subtrees(commit):
           if verbose:
-              print "Adding %s %s at path %s" % (item.type, item.hexsha, item.path)
+              print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
           if item.type is "blob":
             index.add(item,)
           else:
@@ -100,7 +115,7 @@ def split(repo, split_config, names, verbose):
                                              head = False)
 
       branch.commit = parent
-      print "%s\t[%s]" % (parent.hexsha, branch.name)
+      print("%s\t[%s]" % (parent.hexsha, branch.name))
     finally:
       if os.path.exists(index_path):
         os.remove(index_path)
@@ -174,7 +189,7 @@ def main():
   split_config = open_config(repo)
 
   if options.debug:
-    print "repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir)
+    print("repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir))
 
   if options.subcommand is "list":
     if len(args) != 0:
