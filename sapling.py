@@ -191,16 +191,3 @@ try:
   exit(0)
 except object as e:
   usage(e)
-
-
-# TODO(jsirois): kill this cruft
-#for name, split in splitConfig.splits.items():
-#  print "Found split: %s" % name
-#
-#  for i, commit in enumerate(split.commits()):
-#    fileinfos = map(lambda obj: obj.path,
-#                    commit.tree.traverse(predicate = lambda obj, depth: isinstance(obj, git.Blob),
-#                                         visit_once = True))
-#
-#    print "[%d] %s %s %s\n%s\t%s" % (i, commit.hexsha, commit.committed_date, commit.committer,
-#                                     commit.message, "\n\t".join(fileinfos))
