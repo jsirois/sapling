@@ -99,7 +99,7 @@ def split(repo, split_config, names, verbose):
       if verbose:
         print("[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count))
       elif pct_complete > pct:
-        print("".join(itertools.repeat(".", pct_complete - pct)), end = "")
+        print("." * (pct_complete - pct), end = "")
         pct = pct_complete
         sys.__stdout__.flush()
 
