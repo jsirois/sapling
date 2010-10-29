@@ -43,7 +43,7 @@ class Split(object):
 
     for path in self.paths:
       try:
-        yield (path, commit.tree / path)
+        yield commit.tree / path
       except KeyError as e:
         if not ignore_not_found:
           raise e

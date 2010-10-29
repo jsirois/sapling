@@ -79,17 +79,20 @@ def split(repo, split_config, names, verbose):
     index = git.IndexFile(repo, index_path)
 
     try:
-      for commit in split.commits():
-        for path, subtree in split.subtrees(commit):
+      commits = __builtins__.list(split.commits())
+      commit_count = len(commits)
+      print "Processing %d commits" % commit_count
+
+      for i, commit in enumerate(commits):
+        print "[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count)
+        for item in split.subtrees(commit):
           if verbose:
-            print "Adding subtree %s at path %s to index %s" % (subtree, path, index.path)
-          for item in subtree.traverse(lambda item, depth: item.type is "blob"):
-            if verbose:
-              print "\tAdding item: [%s] %s" % (item.hexsha, item.path)
-            index.add([item])
+              print "Adding %s %s at path %s" % (item.type, item.hexsha, item.path)
+          if item.type is "blob":
+            index.add(item,)
+          else:
+            index.add(item.traverse(lambda item, depth: item.type is "blob"))
         synthetic_tree = index.write_tree()
-        if verbose and parent is not None:
-          print "Creating commit with parent: %s" % parent.hexsha
         parent = git.Commit.create_from_tree(repo,
                                              synthetic_tree,
                                              "sapling split of %s" % commit.hexsha,
