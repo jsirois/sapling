@@ -41,8 +41,9 @@ url and the 'paths' to split out can be specified as keyword arguments"""
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def commits(self, reverse = True):
+  def commits(self, branch = None, reverse = True):
     head = self._current_head()
+    revspec = head if branch is None else "%s ^%s" % (head.hexsha, self._repo.branch())
     return git.Commit.iter_items(self._repo, head, self.paths, reverse = reverse)
 
   def apply(self, branch_name, commits = None,

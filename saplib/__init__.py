@@ -5,7 +5,5 @@ from split import Split
 __all__ = (
     'Config',
     'ConfigError',
-    'find',
     'Split'
-    'with_line_numbers'
 )
