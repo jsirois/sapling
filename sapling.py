@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from __builtin__ import list as pylist
 
 import git
 import gitdb
@@ -15,9 +16,9 @@ def usage(message, *args):
   print(message % args)
   exit(1)
 
-def open_repo():
+def open_repo(native = True):
   try:
-    return git.Repo()
+    return git.Repo(odbt = git.db.GitCmdObjectDB if native else git.db.GitDB)
   except git.exc.InvalidGitRepositoryError:
     usage("Must be inside a git repository")
 
@@ -51,7 +52,8 @@ def install(show = False, force = False):
   if not os.path.exists(installed_link_path):
     try:
       os.symlink(os.path.abspath(sys.argv[0]), installed_link_path)
-      print("symlink %s at: %s" % ("re-installed" if recreate else "installed", installed_link_path))
+      print("symlink %s at: %s" % ("re-installed" if recreate else "installed",
+                                   installed_link_path))
     except OSError as e:
       usage("failed to install symlink: %s", e)
 
@@ -79,16 +81,18 @@ def split(repo, split_config, names, verbose):
                          lambda branch: branch.name == branch_name,
                          lambda: repo.create_head(branch_name))
 
-    commits = __builtins__.list(split.commits())
+    commits = pylist(split.commits())
     commit_count = len(commits)
-    print("Processing %d commits" % commit_count)
+
+    message = "Processing %d commits" % commit_count
+
+    width = max(len(message) + 2.0, 80.0)
+    factor = commit_count / width
+
+    print(message + (" " * (int(width) - len(message) - 1)) + "|")
 
     pct = 0
     pct_complete = 0
-    width = 80.0
-
-    factor = commit_count / width
-    print("".join(itertools.repeat("_", int(width))))
 
     for i, commit in enumerate(commits):
       pct_complete = int(i / factor % commit_count)
@@ -106,7 +110,7 @@ def split(repo, split_config, names, verbose):
       index = git.IndexFile(repo, index_path)
       for item in split.subtrees(commit):
         if verbose:
-            print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
+          print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
         if item.type is "blob":
           index.add(item,)
         else:
@@ -134,8 +138,8 @@ def split(repo, split_config, names, verbose):
 
 def parse_args():
   usage = """
-    %prog (-d) --list
-    %prog (-d) --split [splitname...]"""
+    %prog (-dv --python-git-db) --list
+    %prog (-dv --python-git-db) --split [splitname...]"""
 
   epilog = "Happy splitting!"
 
@@ -144,6 +148,10 @@ def parse_args():
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
                     help = "prints extra information")
+  parser.add_option("--python-git-db", dest = "native", action = "store_false", default = True,
+                    help = "specifies the python implementation of the git object database should "
+                    "be used instead of the native one - can speed operations when repository has "
+                    "few large files")
 
   # TODO(jsirois): enforce mutual exclusivity of these option groups
 
@@ -197,7 +205,7 @@ def main():
     return
 
   # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
-  repo = open_repo()
+  repo = open_repo(options.native)
   split_config = open_config(repo)
 
   if options.debug:
