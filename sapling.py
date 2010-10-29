@@ -3,14 +3,14 @@ from __future__ import print_function
 from __builtin__ import list as pylist
 
 import git
-import gitdb
-import itertools
 import optparse
 import os
 import saplib
-import StringIO
 import subprocess
 import sys
+
+def log(message, *args, **kwargs):
+  print(message % args, file = sys.stderr, **kwargs)
 
 def usage(message, *args):
   print(message % args)
@@ -62,79 +62,62 @@ def install(show = False, force = False):
 
 def list(repo, split_config, verbose):
   for split in split_config.splits.values():
-    if not verbose:
-      print(split.name)
-    else:
+    print(split.name)
+    if verbose:
       paths = (
         "%s/" % os.path.relpath(os.path.join(repo.working_tree_dir, path)) for path in split.paths
       )
-      print("%s\t%s\t%d\n\t%s" % (split.name, split.remote, len(split.paths), "\n\t".join(paths)))
+      log("remote: %s\npaths (%d):\n\t%s", split.remote, len(split.paths), "\n\t".join(paths))
 
-def split(repo, split_config, names, verbose):
+def split(split_config, names, verbose):
   for split in (split_config.splits[name] for name in names):
     if (verbose):
-      print("Operating on split: %s" % split)
+      log("Operating on split: %s", split)
 
-    parent = None
+    # TODO(jsirois): allow customization of branch, consider special names:
+    # name1:branch1 name2 ... nameN:branchN
     branch_name = 'sapling_split_%s' % split.name
-    branch = saplib.find(repo.branches,
-                         lambda branch: branch.name == branch_name,
-                         lambda: repo.create_head(branch_name))
 
     commits = pylist(split.commits())
-    commit_count = len(commits)
 
-    message = "Processing %d commits" % commit_count
+    class ProgressTracker(object):
+      def __init__(self):
+        self._commit_count =len(commits)
+        self._width = 80.0
+        self._pct = 0
+        self._pct_complete = 0
 
-    width = max(len(message) + 2.0, 80.0)
-    factor = commit_count / width
-
-    print(message + (" " * (int(width) - len(message) - 1)) + "|")
-
-    pct = 0
-    pct_complete = 0
-
-    for i, commit in enumerate(commits):
-      pct_complete = int(i / factor % commit_count)
-      if verbose:
-        print("[%s] (%d of %d)" % (commit.hexsha, i + 1, commit_count))
-      elif pct_complete > pct:
-        print("." * (pct_complete - pct), end = "")
-        pct = pct_complete
-        sys.__stdout__.flush()
-
-      index_path = '/tmp/%s.index' % branch_name
-      if os.path.exists(index_path):
-        os.remove(index_path)
-
-      index = git.IndexFile(repo, index_path)
-      for item in split.subtrees(commit):
+      def on_start(self):
+        message = "[split = %s, branch = %s] Processing %d commits" % (split.name,
+                                                                       branch_name,
+                                                                       self._commit_count)
         if verbose:
-          print("Adding %s %s at path %s" % (item.type, item.hexsha, item.path))
-        if item.type is "blob":
-          index.add(item,)
+          log(message)
         else:
-          index.add(item.traverse(lambda item, depth: item.type is "blob"))
-      synthetic_tree = index.write_tree()
-      parent = git.Commit(repo, git.Commit.NULL_BIN_SHA, synthetic_tree, commit.author,
-                          commit.authored_date, commit.author_tz_offset, commit.committer,
-                          commit.committed_date, commit.committer_tz_offset,
-                          "%s\n(sapling split of %s)" % (commit.message, commit.hexsha),
-                          [] if parent is None else [ parent ], commit.encoding)
+          self._width = max(len(message) + 2.0, float(self._width))
+          self._quantum = self._commit_count / self._width
+          log(message + (" " * (int(self._width) - len(message) - 1)) + "|")
 
-      stream = StringIO.StringIO()
-      parent._serialize(stream)
-      streamlen = stream.tell()
-      stream.seek(0)
+      def on_commit(self, i, original_commit, new_commit):
+        if verbose:
+          log("[%s] (%d of %d)", original_commit.hexsha, i + 1, self._commit_count)
+        else:
+          self._pct_complete = int(i / self._quantum % self._commit_count)
+          if self._pct_complete > self._pct:
+            log("." * (self._pct_complete - self._pct), end = "")
+            self._pct = self._pct_complete
+            sys.__stdout__.flush()
 
-      istream = repo.odb.store(gitdb.IStream(git.Commit.type, streamlen, stream))
-      parent.binsha = istream.binsha
+      def on_finish(self):
+        if not verbose:
+          log("." * (int(self._width) - self._pct_complete))
 
-    branch.commit = parent
+    progressTracker = ProgressTracker()
+    progressTracker.on_start()
+    tip = split.apply(branch_name, commits, progressTracker.on_commit)
+    progressTracker.on_finish()
 
-    if not verbose:
-      print("".join(itertools.repeat(".", int(width) - pct_complete)))
-    print("%s\t[%s]" % (parent.hexsha, branch.name))
+    print(tip.hexsha)
 
 def parse_args():
   usage = """
@@ -220,7 +203,7 @@ def main():
     if len(args) == 0:
       ferror("At least 1 split must be specified")
     try:
-      split(repo, split_config, args, options.verbose)
+      split(split_config, args, options.verbose)
     except KeyError as e:
       ferror("split not defined: %s" % e)
 
