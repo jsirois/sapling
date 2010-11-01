@@ -82,7 +82,7 @@ def split(split_config, names, verbose):
 
     class ProgressTracker(object):
       def __init__(self):
-        self._commit_count =len(commits)
+        self._commit_count = len(commits)
         self._commit_index = 0
         self._width = 80.0
         self._pct = 0

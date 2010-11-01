@@ -41,9 +41,8 @@ url and the 'paths' to split out can be specified as keyword arguments"""
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def commits(self, branch = None, reverse = True):
+  def commits(self, reverse = True):
     head = self._current_head()
-    revspec = head if branch is None else "%s ^%s" % (head.hexsha, self._repo.branch())
     return git.Commit.iter_items(self._repo, head, self.paths, reverse = reverse)
 
   def apply(self, branch_name, commits = None,
@@ -64,7 +63,7 @@ and returns the tip commit.  An on_commit callback can be passed to track progre
       index = git.IndexFile(self._repo, index_path)
       for item in self._subtrees(commit):
         if item.type is "blob":
-          index.add(item,)
+          index.add([item])
         else:
           index.add(item.traverse(lambda item, depth: item.type is "blob"))
       synthetic_tree = index.write_tree()
