@@ -83,9 +83,11 @@ def split(split_config, names, verbose):
     class ProgressTracker(object):
       def __init__(self):
         self._commit_count =len(commits)
+        self._commit_index = 0
         self._width = 80.0
         self._pct = 0
         self._pct_complete = 0
+
 
       def on_start(self):
         message = "[split = %s, branch = %s] Processing %d commits" % (split.name,
@@ -98,12 +100,14 @@ def split(split_config, names, verbose):
           self._quantum = self._commit_count / self._width
           log(message + (" " * (int(self._width) - len(message) - 1)) + "|")
 
-      def on_commit(self, i, original_commit, new_commit):
+      def on_commit(self, original_commit, new_commit):
+        self._commit_index += 1
+
         if verbose:
-          log("%s -> %s (%d of %d)", original_commit.hexsha, new_commit.hexsha, i + 1,
+          log("%s -> %s (%d of %d)", original_commit.hexsha, new_commit.hexsha, self._commit_index,
               self._commit_count)
         else:
-          self._pct_complete = int(i / self._quantum % self._commit_count)
+          self._pct_complete = int(self._commit_index / self._quantum % self._commit_count)
           if self._pct_complete > self._pct:
             log("." * (self._pct_complete - self._pct), end = "")
             self._pct = self._pct_complete

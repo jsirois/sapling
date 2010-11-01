@@ -47,8 +47,8 @@ url and the 'paths' to split out can be specified as keyword arguments"""
     return git.Commit.iter_items(self._repo, head, self.paths, reverse = reverse)
 
   def apply(self, branch_name, commits = None,
-            on_commit = lambda index, original_commit, new_commit: None):
-    """Applies this split over the given commits (or self.commits() is None) to then named branch
+            on_commit = lambda original_commit, new_commit: None):
+    """Applies this split over the given commits (or self.commits() if None) to the named branch
 and returns the tip commit.  An on_commit callback can be passed to track progress of the split."""
 
     parent = None
@@ -56,7 +56,7 @@ and returns the tip commit.  An on_commit callback can be passed to track progre
                       lambda branch: branch.name == branch_name,
                       lambda: self._repo.create_head(branch_name))
 
-    for i, commit in enumerate(self.commits() if commits is None else commits):
+    for commit in (self.commits() if commits is None else commits):
       index_path = '/tmp/%s.index' % branch_name
       if os.path.exists(index_path):
         os.remove(index_path)
@@ -83,7 +83,7 @@ and returns the tip commit.  An on_commit callback can be passed to track progre
       parent.binsha = istream.binsha
 
       if (on_commit):
-        on_commit(i, commit, parent)
+        on_commit(commit, parent)
 
     branch.commit = parent
     return parent
