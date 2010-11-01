@@ -54,9 +54,18 @@ splits = [
 
 == Use
 
-Given a the .saplings above, you could split out the common split to a new repo like so:
+To verify your .saplings is correct, you can view the current splits (assuming .saplings above)
+with:
+$ git sap
+common
+hack
+
+You could split out the common split to a new repo like so:
 $ git sap --split common
-$ git push git@github.com:jsirois/common.git sapling_split_common
+$ git push git@github.com:jsirois/common.git sapling_split_common:master
+
+You can merge changes back in from a split branch or repo with:
+$ git pull -s recursive -X ours git@github.com:jsirois/common.git master
 
 == Development:
 
