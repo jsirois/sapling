@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = 'sapling',
-    version = '0.0.3',
+    version = '0.0.4',
 
     author = 'John Sirois',
     author_email = 'john.sirois@gmail.com',
