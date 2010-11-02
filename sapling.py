@@ -79,7 +79,7 @@ def split(split_config, names, verbose, dry_run):
     branch_name = 'sapling_split_%s' % split.name
 
     if dry_run:
-      commits = pylist(split.commits(branch_name = branch_name))
+      commits = pylist(split.commits())
       print("Would split %d new commits to branch: %s" % (len(commits), branch_name))
       print("\n".join(commit.hexsha for commit in commits))
       return

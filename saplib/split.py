@@ -42,17 +42,12 @@ url and the 'paths' to split out can be specified as keyword arguments"""
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def commits(self, branch_name = None, reverse = True):
-    """Returns an iterator over the commits in the current head that instersect this split.  If
-    branch_name is specified then all commits already split to branch_name will be omitted such that
-    just the new commits not yet split are listed.  By default commits are returned oldest first,
-    but this can be overridden by specifying 'reverse' = False"""
+  def commits(self, reverse = True):
+    """Returns an iterator over the commits in the current head that instersect this split.  By
+    default commits are returned oldest first, but this can be overridden by specifying
+    'reverse' = False"""
 
-    head = self._current_head()
-    if branch_name in (branch.name for branch in self._repo.branches):
-      refspec = "%s ^%s" % (head.name, branch_name)
-    else:
-      refspec = head
+    refspec = self._current_head()
     return git.Commit.iter_items(self._repo, refspec, self.paths, reverse = reverse)
 
   class ApplyListener(object):
@@ -64,13 +59,15 @@ url and the 'paths' to split out can be specified as keyword arguments"""
       pass
 
   def apply(self, branch_name, apply_listener = ApplyListener()):
-    """Applies this split over the unsplit commits to the named branch and returns the tip commit.
-An on_commit callback can be passed to track progress of the split. If there are no (new) commits to
-split None is returned."""
+    """Applies this split over the commits to the named branch and returns the tip commit. An
+ApplyListener callback can be passed to track progress of the split; otherwise, a no-op
+ApplyListener is used. If there are no (new) commits to split None is returned."""
 
-    commits = list(self.commits(branch_name = branch_name))
+    commits = list(self.commits())
+    if not commits:
+      return None
+
     commit_count = len(commits)
-    last_commit = commits[commit_count - 1]
 
     apply_listener.on_start(commit_count)
     try:
@@ -96,11 +93,6 @@ split None is returned."""
         synthetic_tree = index.write_tree()
 
         parents = [] if parent is None else [ parent ]
-        if commit is last_commit:
-          # mark this split as merged
-          #parents.append(self._current_head_commit())
-          pass
-
         parent = self._copy_commit(commit, synthetic_tree, parents)
         apply_listener.on_commit(commit, parent)
 
