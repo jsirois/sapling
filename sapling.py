@@ -69,7 +69,7 @@ def list(repo, split_config, verbose):
       )
       log("remote: %s\npaths (%d):\n\t%s", split.remote, len(split.paths), "\n\t".join(paths))
 
-def split(split_config, names, verbose):
+def split(split_config, names, verbose, dry_run):
   for split in (split_config.splits[name] for name in names):
     if (verbose):
       log("Operating on split: %s", split)
@@ -78,18 +78,21 @@ def split(split_config, names, verbose):
     # name1:branch1 name2 ... nameN:branchN
     branch_name = 'sapling_split_%s' % split.name
 
-    commits = pylist(split.commits())
+    if dry_run:
+      commits = pylist(split.commits(branch_name = branch_name))
+      print("Would split %d new commits to branch: %s" % (len(commits), branch_name))
+      print("\n".join(commit.hexsha for commit in commits))
+      return
 
-    class ProgressTracker(object):
+    class ProgressTracker(saplib.Split.ApplyListener):
       def __init__(self):
-        self._commit_count = len(commits)
         self._commit_index = 0
         self._width = 80.0
         self._pct = 0
         self._pct_complete = 0
 
-
-      def on_start(self):
+      def on_start(self, commit_count):
+        self._commit_count = commit_count
         message = "[split = %s, branch = %s] Processing %d commits" % (split.name,
                                                                        branch_name,
                                                                        self._commit_count)
@@ -117,12 +120,12 @@ def split(split_config, names, verbose):
         if not verbose:
           log("." * (int(self._width) - self._pct_complete))
 
-    progressTracker = ProgressTracker()
-    progressTracker.on_start()
-    tip = split.apply(branch_name, commits, progressTracker.on_commit)
-    progressTracker.on_finish()
+    tip = split.apply(branch_name, apply_listener = ProgressTracker())
 
-    print(tip.hexsha)
+    if (tip):
+      print(tip.hexsha)
+    else:
+      log("No new commits to split.")
 
 def parse_args():
   usage = """
@@ -178,6 +181,12 @@ def parse_args():
                     const = "split",
                     help =
                     """populates the [splitname] branch with commits intersecting the split""")
+  split.add_option("-n", "--dry-run",
+                   dest = "dry_run",
+                   action = "store_true",
+                   default = False,
+                   help = "does not perform a split, instead just lists the commits that would be "
+                   "split")
   parser.add_option_group(split)
 
   (options, args) = parser.parse_args()
@@ -208,7 +217,7 @@ def main():
     if len(args) == 0:
       ferror("At least 1 split must be specified")
     try:
-      split(split_config, args, options.verbose)
+      split(split_config, args, options.verbose, options.dry_run)
     except KeyError as e:
       ferror("split not defined: %s" % e)
 

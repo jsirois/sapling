@@ -26,6 +26,7 @@ url and the 'paths' to split out can be specified as keyword arguments"""
 
   @property
   def paths(self):
+    "The paths this split is comprised of."
     return self._paths
 
   @paths.setter
@@ -41,55 +42,98 @@ url and the 'paths' to split out can be specified as keyword arguments"""
         raise KeyError("Invalid path: %s" % path)
     return paths
 
-  def commits(self, reverse = True):
+  def commits(self, branch_name = None, reverse = True):
+    """Returns an iterator over the commits in the current head that instersect this split.  If
+    branch_name is specified then all commits already split to branch_name will be omitted such that
+    just the new commits not yet split are listed.  By default commits are returned oldest first,
+    but this can be overridden by specifying 'reverse' = False"""
+
     head = self._current_head()
-    return git.Commit.iter_items(self._repo, head, self.paths, reverse = reverse)
+    if branch_name in (branch.name for branch in self._repo.branches):
+      refspec = "%s ^%s" % (head.name, branch_name)
+    else:
+      refspec = head
+    return git.Commit.iter_items(self._repo, refspec, self.paths, reverse = reverse)
 
-  def apply(self, branch_name, commits = None,
-            on_commit = lambda original_commit, new_commit: None):
-    """Applies this split over the given commits (or self.commits() if None) to the named branch
-and returns the tip commit.  An on_commit callback can be passed to track progress of the split."""
+  class ApplyListener(object):
+    def on_start(self, commit_count):
+      pass
+    def on_commit(self, original_commit, new_commit):
+      pass
+    def on_finish(self):
+      pass
 
-    parent = None
-    branch = lib.find(self._repo.branches,
-                      lambda branch: branch.name == branch_name,
-                      lambda: self._repo.create_head(branch_name))
+  def apply(self, branch_name, apply_listener = ApplyListener()):
+    """Applies this split over the unsplit commits to the named branch and returns the tip commit.
+An on_commit callback can be passed to track progress of the split. If there are no (new) commits to
+split None is returned."""
 
-    for commit in (self.commits() if commits is None else commits):
-      index_path = '/tmp/%s.index' % branch_name
-      if os.path.exists(index_path):
-        os.remove(index_path)
+    commits = list(self.commits(branch_name = branch_name))
+    commit_count = len(commits)
+    last_commit = commits[commit_count - 1]
 
-      index = git.IndexFile(self._repo, index_path)
-      for item in self._subtrees(commit):
-        if item.type is "blob":
-          index.add([item])
-        else:
-          index.add(item.traverse(lambda item, depth: item.type is "blob"))
-      synthetic_tree = index.write_tree()
-      parent = git.Commit(self._repo, git.Commit.NULL_BIN_SHA, synthetic_tree, commit.author,
-                          commit.authored_date, commit.author_tz_offset, commit.committer,
-                          commit.committed_date, commit.committer_tz_offset,
-                          "%s\n(sapling split of %s)" % (commit.message, commit.hexsha),
-                          [] if parent is None else [ parent ], commit.encoding)
+    apply_listener.on_start(commit_count)
+    try:
+      if not commits:
+        return None
 
-      stream = StringIO.StringIO()
-      parent._serialize(stream)
-      stream_len = stream.tell()
-      stream.seek(0)
+      parent = None
+      branch = lib.find(self._repo.branches,
+                        lambda branch: branch.name == branch_name,
+                        lambda: self._repo.create_head(branch_name))
 
-      istream = self._repo.odb.store(gitdb.IStream(git.Commit.type, stream_len, stream))
-      parent.binsha = istream.binsha
+      for commit in commits:
+        index_path = '/tmp/%s.index' % branch_name
+        if os.path.exists(index_path):
+          os.remove(index_path)
 
-      if (on_commit):
-        on_commit(commit, parent)
+        index = git.IndexFile(self._repo, index_path)
+        for item in self._subtrees(commit):
+          if item.type is "blob":
+            index.add([item])
+          else:
+            index.add(item.traverse(lambda item, depth: item.type is "blob"))
+        synthetic_tree = index.write_tree()
 
-    branch.commit = parent
-    return parent
+        parents = [] if parent is None else [ parent ]
+        if commit is last_commit:
+          # mark this split as merged
+          #parents.append(self._current_head_commit())
+          pass
+
+        parent = self._copy_commit(commit, synthetic_tree, parents)
+        apply_listener.on_commit(commit, parent)
+
+      branch.commit = parent
+      return parent
+
+    finally:
+      apply_listener.on_finish()
+
+  def _copy_commit(self, orig_commit, tree, parents):
+    new_commit = git.Commit(self._repo, git.Commit.NULL_BIN_SHA, tree, orig_commit.author,
+                            orig_commit.authored_date, orig_commit.author_tz_offset,
+                            orig_commit.committer, orig_commit.committed_date,
+                            orig_commit.committer_tz_offset,
+                            "%s\n(sapling split of %s)" % (orig_commit.message, orig_commit.hexsha),
+                            parents, orig_commit.encoding)
+
+    return self._write_commit(new_commit)
+
+  def _write_commit(self, commit):
+    stream = StringIO.StringIO()
+    commit._serialize(stream)
+
+    stream_len = stream.tell()
+    stream.seek(0)
+
+    istream = self._repo.odb.store(gitdb.IStream(git.Commit.type, stream_len, stream))
+    commit.binsha = istream.binsha
+    return commit
 
   def _subtrees(self, commit = None, ignore_not_found = True):
     if commit is None:
-      commit = self._current_head()
+      commit = self._current_head_commit()
 
     for path in self.paths:
       try:
@@ -99,10 +143,13 @@ and returns the tip commit.  An on_commit callback can be passed to track progre
           raise e
 
   def _current_tree(self):
-    return self._current_head().tree
+    return self._current_head_commit().tree
+
+  def _current_head_commit(self):
+    return self._current_head().commit
 
   def _current_head(self):
-    return self._repo.head.commit
+    return self._repo.head
 
   def __str__(self):
     return "Split(name=%s, remote=%s, paths=%s)" % (self._name, self.remote, self.paths)
