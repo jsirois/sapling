@@ -128,13 +128,16 @@ def split(split_config, names, verbose, dry_run):
       log("No new commits to split.")
 
 def parse_args():
+  versionMessage = "%prog {0} (http://pypi.python.org/pypi/sapling/{0})".format(saplib.version())
+
   usage = """
     %prog (-dv --python-git-db) --list
     %prog (-dv --python-git-db) --split [splitname...]"""
 
   epilog = "Happy splitting!"
 
-  parser = optparse.OptionParser(usage = usage, version = "%prog 0.0.1", epilog = epilog)
+  parser = optparse.OptionParser(usage = usage, version = versionMessage, epilog = epilog)
+
   parser.add_option("-d", "--debug", dest = "debug", action = "store_true", default = False,
                     help = "prints extra debugging information")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,

@@ -1,8 +1,10 @@
 from distutils.core import setup
 
+import saplib
+
 setup(
     name = 'sapling',
-    version = '0.0.4',
+    version = saplib.version(),
 
     author = 'John Sirois',
     author_email = 'john.sirois@gmail.com',
@@ -18,6 +20,7 @@ setup(
     ),
 
     packages = [ 'saplib' ],
+    package_data = { 'saplib': [ 'version.txt' ] },
     scripts = [ 'sapling.py' ],
 
     classifiers = [
