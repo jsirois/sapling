@@ -1,10 +1,10 @@
 from distutils.core import setup
 
-import saplib
+from sapversion import version
 
 setup(
     name = 'sapling',
-    version = saplib.version(),
+    version = version(),
 
     author = 'John Sirois',
     author_email = 'john.sirois@gmail.com',
@@ -19,8 +19,8 @@ setup(
       'GitPython > 0.2, < 0.4',
     ),
 
-    packages = [ 'saplib' ],
-    package_data = { 'saplib': [ 'version.txt' ] },
+    packages = [ 'saplib', 'sapversion' ],
+    package_data = { 'sapversion': [ 'version.txt' ] },
     scripts = [ 'sapling.py' ],
 
     classifiers = [

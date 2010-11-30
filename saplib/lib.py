@@ -33,8 +33,3 @@ would be transformed into:
   width = len(str(len(lines)))
   return os.linesep.join([str(i + 1).rjust(width) + ' ' + line for (i, line) in enumerate(lines)])
 
-def version():
-  """Returns the current version of sapling"""
-
-  with open(os.path.join(os.path.dirname(__file__), 'version.txt'), 'r') as version:
-    return version.read().strip()

@@ -2,6 +2,8 @@
 from __future__ import print_function
 from __builtin__ import list as pylist
 
+from sapversion import version
+
 import git
 import optparse
 import os
@@ -128,7 +130,7 @@ def split(split_config, names, verbose, dry_run):
       log("No new commits to split.")
 
 def parse_args():
-  versionMessage = "%prog {0} (http://pypi.python.org/pypi/sapling/{0})".format(saplib.version())
+  versionMessage = "%prog {0} (http://pypi.python.org/pypi/sapling/{0})".format(version())
 
   usage = """
     %prog (-dv --python-git-db) --list
