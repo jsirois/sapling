@@ -69,7 +69,7 @@ def list(repo, split_config, verbose):
       paths = (
         "%s/" % os.path.relpath(os.path.join(repo.working_tree_dir, path)) for path in split.paths
       )
-      log("remote: %s\npaths (%d):\n\t%s", split.remote, len(split.paths), "\n\t".join(paths))
+      log("paths (%d):\n\t%s", len(split.paths), "\n\t".join(paths))
 
 def split(split_config, names, verbose, dry_run):
   for split in (split_config.splits[name] for name in names):

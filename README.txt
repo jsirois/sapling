@@ -24,9 +24,6 @@ common = {
   # The logical name of the split - listed by git sap.
   'name': 'common',
 
-  # The default remote to associate this split with - currently ignored but required.
-  'remote': 'file:/tmp/common.git',
-
   # The paths that comprise this split.  These paths will form the saplings split from and merged
   # into your repository when using git sap --split and git sap --merge respectively
   'paths': [
@@ -39,7 +36,6 @@ common = {
 
 hack = {
   'name': 'hack',
-  'remote': 'file:/tmp/hack.git',
   'paths': [
     'project',
     'src/main/scala/com/twitter/hack',

@@ -1,6 +1,5 @@
 tests = {
   'name': 'tests',
-  'remote': 'file:/tmp/sapling-tests.git',
   'paths': [ 'test' ]
 }
 

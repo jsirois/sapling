@@ -9,14 +9,13 @@ class Split(object):
 subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
 remote."""
 
-  __slots__ = ('_repo', '_name', 'remote', '_paths')
+  __slots__ = ('_repo', '_name', '_paths')
 
   def __init__(self, repo, name, **kwargs):
-    """Creates a new Split over the given repo with the specified logical name.  The 'remote' git
-url and the 'paths' to split out can be specified as keyword arguments"""
+    """Creates a new Split over the given repo with the specified logical name.  The 'paths' to
+    split out can be specified as keyword arguments"""
     self._repo = repo
     self._name = name
-    self.remote = kwargs.get('remote', None)
     self.paths = kwargs.get('paths', [])
 
   @property
@@ -144,4 +143,4 @@ ApplyListener is used. If there are no (new) commits to split None is returned."
     return self._repo.head
 
   def __str__(self):
-    return "Split(name=%s, remote=%s, paths=%s)" % (self._name, self.remote, self.paths)
+    return "Split(name=%s, paths=%s)" % (self._name, self.paths)

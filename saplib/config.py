@@ -17,7 +17,6 @@ class Config(object):
   but need only define a splits list containing the splits in a git repository.  Each split is a
   dict that must have the following entries:
   'name': a logical name for the split
-  'remote': the remote git repo that this split will be synchronized with
   'paths': the paths this split is comprised of relative to the root of the git repository
   """
 
@@ -66,8 +65,6 @@ class Config(object):
     problems = []
     if 'name' not in split:
       problems.append("split must define a 'name'")
-    if 'remote' not in split:
-      problems.append("split must define a 'remote'")
     if 'paths' not in split:
       problems.append("split must define 'paths'")
     if len(problems) > 0:
