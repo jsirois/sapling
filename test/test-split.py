@@ -9,7 +9,7 @@ class SplitTest(unittest.TestCase, fixtures.RepoFixture):
     self.assertEquals([], split.paths)
 
   def test_invalid(self):
-    self.assertRaises(KeyError, saplib.Split, self.repo(), 'jake', paths = [ 'test/' ])
+    self.assertRaises(KeyError, saplib.Split, self.repo(), 'jake', paths = [ 'baz/' ])
     self.assertRaises(KeyError, saplib.Split, self.repo(), 'jake', paths = [ 'test', 'baz' ])
 
   def test_simple(self):

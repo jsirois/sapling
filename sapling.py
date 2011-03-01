@@ -71,8 +71,8 @@ def list(repo, split_config, verbose):
       )
       log("paths (%d):\n\t%s", len(split.paths), "\n\t".join(paths))
 
-def split(split_config, names, verbose, dry_run):
-  for split in (split_config.splits[name] for name in names):
+def split(splits, verbose, dry_run):
+  for split in splits:
     if (verbose):
       log("Operating on split: %s", split)
 
@@ -141,13 +141,13 @@ def parse_args():
   parser = optparse.OptionParser(usage = usage, version = versionMessage, epilog = epilog)
 
   parser.add_option("-d", "--debug", dest = "debug", action = "store_true", default = False,
-                    help = "prints extra debugging information")
+                    help = "Prints extra debugging information.")
   parser.add_option("-v", "--verbose", dest = "verbose", action = "store_true", default = False,
-                    help = "prints extra information")
+                    help = "Prints extra information.")
   parser.add_option("--python-git-db", dest = "native", action = "store_false", default = True,
-                    help = "specifies the python implementation of the git object database should "
+                    help = "Specifies the python implementation of the git object database should "
                     "be used instead of the native one - can speed operations when repository has "
-                    "few large files")
+                    "few large files.")
 
   # TODO(jsirois): enforce mutual exclusivity of these option groups
 
@@ -156,18 +156,18 @@ def parse_args():
                      dest = "subcommand",
                      action = "store_const",
                      const = "install",
-                     help = """installs the git sap command if not installed already""")
+                     help = "Installs the git sap command if not installed already.")
   install.add_option("-f", "--force",
                      dest = "force",
                      action = "store_true",
                      default = False,
-                     help = """forces a re-install of the git sap command""")
+                     help = "Forces a re-install of the git sap command.")
   install.add_option("-s", "--show",
                      dest = "show",
                      action = "store_true",
                      default = False,
-                     help = "does not perform an install, instead shows the path of the binary "
-                     "git sap' calls into")
+                     help = "Does not perform an install, instead shows the path of the binary "
+                     "git sap' calls into.")
   parser.add_option_group(install)
 
   list = optparse.OptionGroup(parser, "List configured splits for the current git repo")
@@ -176,7 +176,7 @@ def parse_args():
                     default = "list",
                     action = "store_const",
                     const = "list",
-                    help = """lists the defined splits""")
+                    help = "Lists splits defined in .saplings if any.")
   parser.add_option_group(list)
 
   split = optparse.OptionGroup(parser, "Split new commits out that affect one or more splits")
@@ -184,14 +184,19 @@ def parse_args():
                     dest = "subcommand",
                     action = "store_const",
                     const = "split",
-                    help =
-                    """populates the [splitname] branch with commits intersecting the split""")
+                    help = "Populates branches with commits intersecting the specified splits. "
+                           "If a --branch is not specified, arguments are treated as split names "
+                           "definied in the .sapling config.")
+  split.add_option("-b", "--branch",
+                    dest = "branch",
+                    help = "Specifies a branch to split to, arguments are treated as the paths to "
+                           "split.")
   split.add_option("-n", "--dry-run",
                    dest = "dry_run",
                    action = "store_true",
                    default = False,
-                   help = "does not perform a split, instead just lists the commits that would be "
-                   "split")
+                   help = "Does not perform a split, instead just lists the commits that would be "
+                   "split.")
   parser.add_option_group(split)
 
   (options, args) = parser.parse_args()
@@ -206,25 +211,41 @@ def main():
     install(options.show, options.force)
     return
 
-  # Fail fast if we're either not in a repo or we are but have an invalid .saplings config
+  # Fail fast if we're not in a repo
   repo = open_repo(options.native)
-  split_config = open_config(repo)
 
   if options.debug:
     print("repo\t[%s]\t%s" % (repo.active_branch, repo.working_tree_dir))
 
   if options.subcommand is "list":
+    # Fail fast if we don't have an invalid .saplings config
+    split_config = open_config(repo)
+
     if len(args) != 0:
       ferror("list takes no arguments")
+
     list(repo, split_config, options.verbose)
 
   elif options.subcommand is "split":
-    if len(args) == 0:
-      ferror("At least 1 split must be specified")
-    try:
-      split(split_config, args, options.verbose, options.dry_run)
-    except KeyError as e:
-      ferror("split not defined: %s" % e)
+    if options.branch:
+      if len(args) == 0:
+        ferror("At least 1 split path must be specified")
+
+      try:
+        splits = [ saplib.Split(repo, options.branch, paths = args) ]
+      except KeyError as e:
+        ferror(e)
+    else:
+      if len(args) == 0:
+        ferror("At least 1 split must be specified")
+
+      splits_by_name = open_config(repo).splits
+      try:
+        splits = [ splits_by_name[name] for name in args ]
+      except KeyError as e:
+        ferror("Split not defined: %s" % e)
+
+    split(splits, options.verbose, options.dry_run)
 
 try:
   main()

@@ -6,8 +6,8 @@ import StringIO
 
 class Split(object):
   """Represents a split of a git repository off to a remote repository.  A Split maps one or more
-subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
-remote."""
+  subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
+  remote."""
 
   __slots__ = ('_repo', '_name', '_paths')
 
@@ -16,7 +16,7 @@ remote."""
     split out can be specified as keyword arguments"""
     self._repo = repo
     self._name = name
-    self.paths = kwargs.get('paths', [])
+    self.paths = [ os.path.normpath(path) for path in kwargs.get('paths', []) ]
 
   @property
   def name(self):
@@ -59,8 +59,8 @@ remote."""
 
   def apply(self, branch_name, apply_listener = ApplyListener()):
     """Applies this split over the commits to the named branch and returns the tip commit. An
-ApplyListener callback can be passed to track progress of the split; otherwise, a no-op
-ApplyListener is used. If there are no (new) commits to split None is returned."""
+    ApplyListener callback can be passed to track progress of the split; otherwise, a no-op
+    ApplyListener is used. If there are no (new) commits to split None is returned."""
 
     commits = list(self.commits())
     if not commits:
