@@ -1,6 +1,7 @@
-.idea/workspace.xml
+MANIFEST
+.idea/
 build/
 dist/
-MANIFEST
+*.iml
 *.pyc
 *.pyo
