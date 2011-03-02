@@ -48,8 +48,9 @@ class Config(object):
   @classmethod
   def _parse_split(cls, repo, splitmap):
     name = splitmap.pop('name')
+    patterns = splitmap.pop('paths')
     try:
-      return Split(repo, name, **splitmap)
+      return Split(repo, name, patterns)
     except KeyError:
       raise ConfigError("Problem creating split: %s\n%s\n\n%s", name, splitmap,
                         traceback.format_exc())

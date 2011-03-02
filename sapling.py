@@ -78,7 +78,7 @@ def split(splits, verbose, dry_run):
 
     # TODO(jsirois): allow customization of branch, consider special names:
     # name1:branch1 name2 ... nameN:branchN
-    branch_name = 'sapling_split_%s' % split.name
+    branch_name = '_sapling_split_%s_' % split.name
 
     if dry_run:
       commits = pylist(split.commits())
@@ -186,11 +186,11 @@ def parse_args():
                     const = "split",
                     help = "Populates branches with commits intersecting the specified splits. "
                            "If a --branch is not specified, arguments are treated as split names "
-                           "definied in the .sapling config.")
+                           "definied in the .saplings config.")
   split.add_option("-b", "--branch",
                     dest = "branch",
-                    help = "Specifies a branch to split to, arguments are treated as the paths to "
-                           "split.")
+                    help = "Specifies a branch to split to, arguments are treated as the patterns "
+                           "to split.")
   split.add_option("-n", "--dry-run",
                    dest = "dry_run",
                    action = "store_true",
@@ -232,7 +232,7 @@ def main():
         ferror("At least 1 split path must be specified")
 
       try:
-        splits = [ saplib.Split(repo, options.branch, paths = args) ]
+        splits = [ saplib.Split(repo, options.branch, args) ]
       except KeyError as e:
         ferror(e)
     else:

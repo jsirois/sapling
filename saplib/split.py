@@ -2,6 +2,7 @@ import git
 import gitdb
 import lib
 import os
+import re
 import StringIO
 
 class Split(object):
@@ -9,14 +10,32 @@ class Split(object):
   subtrees of a containing git repository as a logical unit that can be pushed to or pulled from its
   remote."""
 
-  __slots__ = ('_repo', '_name', '_paths')
+  __slots__ = ('_repo', '_name', '_paths', '_excludes')
 
-  def __init__(self, repo, name, **kwargs):
-    """Creates a new Split over the given repo with the specified logical name.  The 'paths' to
-    split out can be specified as keyword arguments"""
+  def __init__(self, repo, name, patterns):
+    """Creates a new Split over the given repo with the specified logical name.  The patterns
+    specify paths to include in the split and regular expressions to prune out sub-paths.  Paths to
+    include are taken as relative to the root of the repo and can either be directory paths, in
+    which case the full directory tree is retained in the split, or an individual file path.
+    Excludes are distinguished with a leading ! character with the rest of the pattern forming a
+    path regular expression to match files gathered from the path patterns that should be pruned.
+
+    For example, the following patterns would specify a split that grabs a top-level README, and the
+    src/ tree except for any OWNERS files contained within:
+    [ 'README', 'src', '!.+/OWNERS$"""
+
     self._repo = repo
     self._name = name
-    self.paths = [ os.path.normpath(path) for path in kwargs.get('paths', []) ]
+
+    paths = []
+    excludes = set()
+    for pattern in patterns:
+      if pattern.startswith('!'):
+        excludes.add(re.compile(pattern[1:]))
+      else:
+        paths.append(os.path.normpath(pattern))
+    self.paths = paths
+    self._excludes = excludes
 
   @property
   def name(self):
@@ -85,10 +104,10 @@ class Split(object):
 
         index = git.IndexFile(self._repo, index_path)
         for item in self._subtrees(commit):
-          if item.type is "blob":
+          if self._is_included(item):
             index.add([item])
           else:
-            index.add(item.traverse(lambda item, depth: item.type is "blob"))
+            index.add(item.traverse(lambda item, depth: self._is_included(item)))
         synthetic_tree = index.write_tree()
 
         parents = [] if parent is None else [ parent ]
@@ -133,6 +152,15 @@ class Split(object):
         if not ignore_not_found:
           raise e
 
+  def _is_included(self, item):
+    return item.type is "blob" and not self._is_excluded(item)
+
+  def _is_excluded(self, item):
+    for exclude in self._excludes:
+      if exclude.match(item.path):
+        return True
+    return False
+
   def _current_tree(self):
     return self._current_head_commit().tree
 
@@ -143,4 +171,8 @@ class Split(object):
     return self._repo.head
 
   def __str__(self):
-    return "Split(name=%s, paths=%s)" % (self._name, self.paths)
+    return "Split(name=%s, paths=%s, excludes=%s)" % (
+      self._name,
+      self.paths,
+      [ exclude.pattern for exclude in self._excludes ]
+    )
