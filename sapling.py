@@ -31,7 +31,7 @@ def open_config(repo):
       try:
         return saplib.Config(repo, config.read())
       except saplib.ConfigError as e:
-        usage("Problem loading .saplings config: %s" % e)
+        usage("Problem loading .saplings config: %s", e)
   else:
     return saplib.Config(repo)
 
