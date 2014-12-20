@@ -5,3 +5,4 @@ dist/
 *.iml
 *.pyc
 *.pyo
+sapling.egg-info/*
